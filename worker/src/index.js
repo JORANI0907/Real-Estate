@@ -1,4 +1,14 @@
 require('dotenv').config();
+
+// 필수 환경변수 사전 검증
+const REQUIRED_ENVS = ['SUPABASE_URL', 'SUPABASE_SERVICE_KEY', 'ANTHROPIC_API_KEY'];
+const missing = REQUIRED_ENVS.filter(k => !process.env[k]);
+if (missing.length > 0) {
+  console.error(`❌ 필수 환경변수 누락: ${missing.join(', ')}`);
+  console.error('   GitHub Secrets → Settings → Secrets and variables → Actions 에서 확인하세요.');
+  process.exit(1);
+}
+
 const { crawl } = require('./crawler');
 const { analyzeItems } = require('./analyzer');
 const { filterNewItems, saveItems, saveAnalysis } = require('./db');
