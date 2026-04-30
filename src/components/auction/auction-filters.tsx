@@ -1,12 +1,13 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 
 const RISK_LEVELS = [
@@ -30,6 +31,39 @@ const SORT_OPTIONS = [
   { value: 'crawledAt_desc', label: '최신 수집순' },
 ];
 
+const PROPERTY_TYPES = [
+  { value: 'ALL', label: '전체' },
+  { value: '아파트', label: '아파트' },
+  { value: '다세대주택', label: '다세대주택' },
+  { value: '오피스텔', label: '오피스텔' },
+  { value: '단독주택', label: '단독주택' },
+  { value: '상가', label: '상가' },
+  { value: '토지', label: '토지' },
+];
+
+const BID_DAYS_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: '7', label: '7일 이내' },
+  { value: '30', label: '30일 이내' },
+  { value: '90', label: '3개월' },
+];
+
+const PRICE_MAX_EOK = 30;
+
+function eokToWon(eok: number): number {
+  return eok * 100_000_000;
+}
+
+function wonToEok(won: number): number {
+  return Math.round(won / 100_000_000);
+}
+
+function formatPriceLabel(eok: number): string {
+  if (eok === 0) return '0원';
+  if (eok >= PRICE_MAX_EOK) return `${PRICE_MAX_EOK}억+`;
+  return `${eok}억`;
+}
+
 interface AuctionFiltersProps {
   className?: string;
 }
@@ -38,6 +72,16 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+
+  const urlPriceMinEok = wonToEok(parseInt(searchParams.get('priceMin') || '0'));
+  const urlPriceMaxEok = wonToEok(parseInt(searchParams.get('priceMax') || String(eokToWon(PRICE_MAX_EOK))));
+  const [priceRange, setPriceRange] = useState([urlPriceMinEok, urlPriceMaxEok]);
+
+  useEffect(() => {
+    const min = wonToEok(parseInt(searchParams.get('priceMin') || '0'));
+    const max = wonToEok(parseInt(searchParams.get('priceMax') || String(eokToWon(PRICE_MAX_EOK))));
+    setPriceRange([min, max]);
+  }, [searchParams]);
 
   const updateParam = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -54,11 +98,29 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
     router.push(pathname);
   }, [router, pathname]);
 
+  function commitPriceRange(range: number[]) {
+    const params = new URLSearchParams(searchParams.toString());
+    const [min, max] = range;
+    if (min > 0) params.set('priceMin', String(eokToWon(min)));
+    else params.delete('priceMin');
+    if (max < PRICE_MAX_EOK) params.set('priceMax', String(eokToWon(max)));
+    else params.delete('priceMax');
+    params.delete('page');
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
   const currentRisk = searchParams.get('riskLevel') ?? '';
   const currentFail = searchParams.get('failCountMin') ?? '';
   const currentKeyword = searchParams.get('searchKeyword') ?? '';
   const currentSort = `${searchParams.get('sortBy') ?? 'bidDate'}_${searchParams.get('sortOrder') ?? 'asc'}`;
-  const hasFilters = currentRisk || currentFail || currentKeyword;
+  const currentPropertyType = searchParams.get('propertyType') || 'ALL';
+  const currentBidDays = searchParams.get('bidDays') ?? '';
+
+  const hasFilters = !!(currentRisk || currentFail || currentKeyword ||
+    searchParams.get('priceMin') || searchParams.get('priceMax') ||
+    (currentPropertyType !== 'ALL') || currentBidDays);
+
+  const priceFiltered = priceRange[0] > 0 || priceRange[1] < PRICE_MAX_EOK;
 
   return (
     <aside className={cn('space-y-5', className)}>
@@ -72,7 +134,7 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
         )}
       </div>
 
-      {/* 키워드 검색 */}
+      {/* 주소 검색 */}
       <div className="space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">주소 검색</p>
         <div className="relative">
@@ -95,7 +157,7 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
         <div className="flex flex-wrap gap-1.5">
           {RISK_LEVELS.map(({ value, label }) => (
             <Badge
-              key={value}
+              key={value || '_all'}
               variant={currentRisk === value ? 'default' : 'outline'}
               className="cursor-pointer"
               onClick={() => updateParam('riskLevel', value)}
@@ -106,16 +168,77 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
         </div>
       </div>
 
+      {/* 물건 종류 */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">물건 종류</p>
+        <Select
+          value={currentPropertyType}
+          onValueChange={(v: string | null) => {
+            const val = v === 'ALL' || !v ? '' : v;
+            updateParam('propertyType', val);
+          }}
+        >
+          <SelectTrigger className="h-8 text-sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {PROPERTY_TYPES.map(({ value, label }) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* 최저가 범위 */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">최저가 범위</p>
+          <span className={cn('text-xs', priceFiltered ? 'text-primary font-medium' : 'text-muted-foreground')}>
+            {priceFiltered
+              ? `${formatPriceLabel(priceRange[0])} ~ ${formatPriceLabel(priceRange[1])}`
+              : '전체'}
+          </span>
+        </div>
+        <Slider
+          min={0}
+          max={PRICE_MAX_EOK}
+          value={priceRange}
+          onValueChange={(v) => {
+            if (Array.isArray(v)) setPriceRange([v[0] as number, v[1] as number]);
+          }}
+          onValueCommitted={(v: number | readonly number[]) => {
+            if (Array.isArray(v)) commitPriceRange([v[0] as number, v[1] as number]);
+          }}
+        />
+      </div>
+
       {/* 유찰횟수 */}
       <div className="space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">유찰횟수</p>
         <div className="flex flex-wrap gap-1.5">
           {FAIL_COUNT_OPTIONS.map(({ value, label }) => (
             <Badge
-              key={value}
+              key={value || '_all'}
               variant={currentFail === value ? 'default' : 'outline'}
               className="cursor-pointer"
               onClick={() => updateParam('failCountMin', value)}
+            >
+              {label}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {/* 매각기일 */}
+      <div className="space-y-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">매각기일</p>
+        <div className="flex flex-wrap gap-1.5">
+          {BID_DAYS_OPTIONS.map(({ value, label }) => (
+            <Badge
+              key={value || '_all'}
+              variant={currentBidDays === value ? 'default' : 'outline'}
+              className="cursor-pointer text-xs"
+              onClick={() => updateParam('bidDays', value)}
             >
               {label}
             </Badge>
