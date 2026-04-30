@@ -152,6 +152,11 @@ async function sendReport(items) {
     return;
   }
 
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn('⚠️ GMAIL_USER 또는 GMAIL_APP_PASSWORD 미설정 — 이메일 발송 건너뜀');
+    return;
+  }
+
   const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {

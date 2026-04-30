@@ -44,8 +44,12 @@ async function main() {
     // Phase 5: 분석 결과 DB 저장
     await saveAnalysis(analyzedItems);
 
-    // Phase 6: 이메일 보고서 발송
-    await sendReport(analyzedItems);
+    // Phase 6: 이메일 보고서 발송 (실패해도 전체 실패로 처리하지 않음)
+    try {
+      await sendReport(analyzedItems);
+    } catch (emailErr) {
+      console.warn('⚠️ 이메일 발송 실패 (크롤링/분석은 정상 완료):', emailErr.message);
+    }
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(`\n✅ 전체 완료: ${elapsed}초`);
