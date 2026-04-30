@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Gavel, Heart, Settings } from 'lucide-react';
+import { BookOpen, Gavel, Heart, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', icon: Home, label: '홈' },
+  { href: '/guide', icon: BookOpen, label: '가이드' },
   { href: '/auction', icon: Gavel, label: '경매' },
   { href: '/favorites', icon: Heart, label: '즐겨찾기' },
   { href: '/settings', icon: Settings, label: '설정' },
@@ -23,7 +23,7 @@ export function BottomNav({ className }: BottomNavProps) {
     <nav className={cn('fixed bottom-0 left-0 right-0 z-50 border-t bg-background', className)}>
       <div className="flex h-16 items-center justify-around">
         {navItems.map(({ href, icon: Icon, label }) => {
-          const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+          const isActive = pathname.startsWith(href);
           return (
             <Link
               key={href}
