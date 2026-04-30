@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { User, Calendar, Info } from 'lucide-react';
+import Link from 'next/link';
+import { User, Calendar, Info, BookOpen, ChevronRight } from 'lucide-react';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -33,6 +34,23 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* 서비스 안내 */}
+      <Link
+        href="/guide"
+        className="flex items-center justify-between rounded-xl border bg-card p-4 mb-4 hover:bg-muted/40 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+            <BookOpen className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">서비스 안내</p>
+            <p className="text-xs text-muted-foreground">기능 설명 및 이용 가이드</p>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
 
       {/* 앱 정보 */}
       <div className="rounded-xl border bg-card p-4 space-y-2">
