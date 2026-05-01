@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { User, Calendar, Info, BookOpen, ChevronRight } from 'lucide-react';
+import { User, Calendar, Info, BookOpen, ChevronRight, SlidersHorizontal } from 'lucide-react';
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -34,6 +34,23 @@ export default async function SettingsPage() {
           </div>
         </div>
       </div>
+
+      {/* 크롤링 설정 */}
+      <Link
+        href="/settings/crawler"
+        className="flex items-center justify-between rounded-xl border bg-card p-4 mb-4 hover:bg-muted/40 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
+            <SlidersHorizontal className="h-4 w-4 text-orange-600" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">크롤링 설정</p>
+            <p className="text-xs text-muted-foreground">지역·물건종류·가격 수집 조건 변경</p>
+          </div>
+        </div>
+        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+      </Link>
 
       {/* 서비스 안내 */}
       <Link
