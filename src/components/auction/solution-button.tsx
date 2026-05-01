@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, ChevronRight, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,14 +12,20 @@ import type { PropertySolution } from '@/types/domain';
 
 interface SolutionButtonProps {
   propertyId: string;
-  initialSolution: PropertySolution | null;
 }
 
-export function SolutionButton({ propertyId, initialSolution }: SolutionButtonProps) {
-  const [solution, setSolution] = useState<PropertySolution | null>(initialSolution);
+export function SolutionButton({ propertyId }: SolutionButtonProps) {
+  const [solution, setSolution] = useState<PropertySolution | null>(null);
   const [open, setOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [confirming, setConfirming] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/properties/${propertyId}/solution`)
+      .then(r => r.json())
+      .then(data => { if (data.solution) setSolution(data.solution); })
+      .catch(() => {});
+  }, [propertyId]);
 
   async function handleGenerate() {
     if (!confirming) {
