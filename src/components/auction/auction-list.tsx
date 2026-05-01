@@ -27,15 +27,16 @@ export async function AuctionList({ searchParams }: AuctionListProps) {
 
   const supabase = await createClient();
 
-  // Fetch current user for isFavorite per-item
   const { data: { user } } = await supabase.auth.getUser();
   let favoriteIds = new Set<string>();
+  let solutionIds = new Set<string>();
   if (user) {
-    const { data: favs } = await supabase
-      .from('favorites')
-      .select('property_id')
-      .eq('user_id', user.id);
+    const [{ data: favs }, { data: sols }] = await Promise.all([
+      supabase.from('favorites').select('property_id').eq('user_id', user.id),
+      supabase.from('property_solutions').select('property_id').eq('user_id', user.id),
+    ]);
     favoriteIds = new Set((favs ?? []).map((f: { property_id: string }) => f.property_id));
+    solutionIds = new Set((sols ?? []).map((s: { property_id: string }) => s.property_id));
   }
 
   let query = supabase.from('v_auction_list').select('*', { count: 'exact' });
@@ -96,6 +97,7 @@ export async function AuctionList({ searchParams }: AuctionListProps) {
     estimatedTotalCost: row.estimated_total_cost ?? null,
     investmentMemo: row.investment_memo ?? null,
     isFavorite: favoriteIds.has(row.id),
+    hasSolution: solutionIds.has(row.id),
   }));
 
   const buildPageUrl = (p: number) => {

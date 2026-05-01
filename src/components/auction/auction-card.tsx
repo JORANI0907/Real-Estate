@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Calendar, RotateCcw } from 'lucide-react';
+import { Calendar, RotateCcw, Sparkles } from 'lucide-react';
 import { RiskBadge } from './risk-badge';
 import { FavoriteButton } from '@/components/common/favorite-button';
 import { formatPrice, formatBidDate, getDaysUntilBid } from '@/lib/format';
@@ -26,13 +26,19 @@ export function AuctionCard({ item, className }: AuctionCardProps) {
           <FavoriteButton propertyId={item.id} initialState={item.isFavorite} />
         </div>
 
-        {/* 상단: 위험도 + 사건번호 */}
-        <div className="flex items-center gap-2 pr-10">
+        {/* 상단: 위험도 + 사건번호 + 솔루션 배지 */}
+        <div className="flex items-center gap-2 pr-10 flex-wrap">
           <RiskBadge level={item.riskLevel} />
           <span className="text-xs text-muted-foreground font-mono">
             {item.caseNumber}
           </span>
           <span className="text-xs text-muted-foreground">{item.court}</span>
+          {item.hasSolution && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-100 dark:bg-violet-950/50 px-1.5 py-0.5 text-xs font-medium text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-800">
+              <Sparkles className="h-2.5 w-2.5" />
+              솔루션
+            </span>
+          )}
         </div>
 
         {/* 주소 */}
