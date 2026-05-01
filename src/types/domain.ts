@@ -94,6 +94,42 @@ export interface AuctionListItem {
   estimatedTotalCost: number | null;
   investmentMemo: string | null;
   isFavorite?: boolean;
+  hasSolution?: boolean;
+}
+
+export interface PropertySolution {
+  id: string;
+  propertyId: string;
+  userId: string;
+  summary: string;
+  costDetail: {
+    bidPriceEstimate: number;
+    acquisitionTax: number;
+    registrationFee: number;
+    judicialScrivener: number;
+    stampDuty: number;
+    evictionCost: number;
+    renovationEstimate: number;
+    loanSetupFee: number;
+    other: number;
+    total: number;
+    notes: string;
+  };
+  rightsSolutions: {
+    issue: string;
+    severity: 'high' | 'medium' | 'low';
+    description: string;
+    solution: string;
+    myAction: string;
+  }[];
+  actionChecklist: {
+    beforeBid: string[];
+    afterWinning: string[];
+    beforeRegistration: string[];
+    afterRegistration: string[];
+  };
+  otherSolutions: string;
+  createdAt: string;
 }
 
 export interface AuctionListFilters {
