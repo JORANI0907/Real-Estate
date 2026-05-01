@@ -23,14 +23,35 @@ async function main() {
   const dbConfig = await getCrawlerConfig();
   if (dbConfig) {
     Object.assign(config, dbConfig);
-    console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} ${config.minorCategory} | 법원: ${config.court || '전체'}`);
+    const courtLabel = config.courts?.length > 0 ? config.courts.join(', ') : (config.court || '전체');
+    const catLabel = config.minorCategories?.length > 0 ? config.minorCategories.join(', ') : (config.minorCategory || '전체');
+    console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} [${catLabel}] | 법원: ${courtLabel}`);
   } else {
     console.log('⚙️ 기본 크롤링 설정 사용');
   }
 
   try {
-    // Phase 1: 크롤링
-    const crawledItems = await crawl();
+    // Phase 1: 크롤링 (법원 × 소분류 조합 순회, caseNumber 기준 중복 제거)
+    const targetCourts = config.courts?.length > 0 ? config.courts : [config.court || ''];
+    const targetCategories = config.minorCategories?.length > 0 ? config.minorCategories : [config.minorCategory || ''];
+    const seenCaseNumbers = new Set();
+    const allCrawledItems = [];
+
+    for (const court of targetCourts) {
+      for (const minorCat of targetCategories) {
+        config.court = court;
+        config.minorCategory = minorCat;
+        const items = await crawl();
+        for (const item of items) {
+          if (!seenCaseNumbers.has(item.caseNumber)) {
+            seenCaseNumbers.add(item.caseNumber);
+            allCrawledItems.push(item);
+          }
+        }
+      }
+    }
+
+    const crawledItems = allCrawledItems;
     if (crawledItems.length === 0) {
       console.log('✅ 검색 조건에 맞는 물건이 없습니다.');
       return;
