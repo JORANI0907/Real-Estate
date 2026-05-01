@@ -9,14 +9,24 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const config = require('./config');
 const { crawl } = require('./crawler');
 const { analyzeItems } = require('./analyzer');
-const { filterNewItems, saveItems, saveAnalysis } = require('./db');
+const { filterNewItems, saveItems, saveAnalysis, getCrawlerConfig } = require('./db');
 const { sendReport } = require('./reporter');
 
 async function main() {
   const startTime = Date.now();
   console.log('🚀 경매 물건 탐색 시작:', new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }));
+
+  // DB에서 크롤링 설정 로드 후 config 모듈에 덮어씀
+  const dbConfig = await getCrawlerConfig();
+  if (dbConfig) {
+    Object.assign(config, dbConfig);
+    console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} ${config.minorCategory} | 법원: ${config.court || '전체'}`);
+  } else {
+    console.log('⚙️ 기본 크롤링 설정 사용');
+  }
 
   try {
     // Phase 1: 크롤링

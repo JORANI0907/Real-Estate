@@ -89,4 +89,35 @@ async function saveAnalysis(items) {
   console.log(`💾 분석 결과 저장 완료: ${items.length}건`);
 }
 
-module.exports = { filterNewItems, saveItems, saveAnalysis };
+async function getCrawlerConfig() {
+  const { data, error } = await supabase
+    .from('crawler_config')
+    .select('*')
+    .eq('id', 1)
+    .single();
+
+  if (error || !data) {
+    console.warn('⚠️ DB에서 크롤링 설정 로드 실패 — 기본값 사용:', error?.message);
+    return null;
+  }
+
+  return {
+    searchBy:          data.search_by,
+    court:             data.court,
+    division:          data.division,
+    sido:              data.sido,
+    sigungu:           data.sigungu,
+    majorCategory:     data.major_category,
+    midCategory:       data.mid_category,
+    minorCategory:     data.minor_category,
+    appraisalMin:      data.appraisal_min,
+    appraisalMax:      data.appraisal_max,
+    failCountMin:      data.fail_count_min,
+    failCountMax:      data.fail_count_max,
+    maxPages:          data.max_pages,
+    notifyEmail:       data.notify_email,
+    minItemsToNotify:  data.min_items_to_notify,
+  };
+}
+
+module.exports = { filterNewItems, saveItems, saveAnalysis, getCrawlerConfig };
