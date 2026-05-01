@@ -11,12 +11,13 @@ export default async function FavoritesPage() {
     return <div className="p-8 text-center text-muted-foreground">로그인이 필요합니다</div>;
   }
 
-  const { data: favs } = await supabase
-    .from('favorites')
-    .select('property_id')
-    .eq('user_id', user.id);
+  const [{ data: favs }, { data: sols }] = await Promise.all([
+    supabase.from('favorites').select('property_id').eq('user_id', user.id),
+    supabase.from('property_solutions').select('property_id').eq('user_id', user.id),
+  ]);
 
   const propertyIds = (favs ?? []).map((f: { property_id: string }) => f.property_id);
+  const solutionIds = new Set((sols ?? []).map((s: { property_id: string }) => s.property_id));
 
   let items: AuctionListItem[] = [];
   if (propertyIds.length > 0) {
@@ -45,6 +46,7 @@ export default async function FavoritesPage() {
       estimatedTotalCost: row.estimated_total_cost ?? null,
       investmentMemo: row.investment_memo ?? null,
       isFavorite: true,
+      hasSolution: solutionIds.has(row.id),
     }));
   }
 
