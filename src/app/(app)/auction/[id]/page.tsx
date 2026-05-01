@@ -5,10 +5,11 @@ import { createClient } from '@/lib/supabase/server';
 import { RiskBadge } from '@/components/auction/risk-badge';
 import { LegalAnalysisSection } from '@/components/auction/legal-analysis-section';
 import { FavoriteButton } from '@/components/common/favorite-button';
+import { SolutionButton } from '@/components/auction/solution-button';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice, formatBidDate, formatDate } from '@/lib/format';
-import type { Property, LegalAnalysis } from '@/types/domain';
+import type { Property, LegalAnalysis, PropertySolution } from '@/types/domain';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -52,6 +53,48 @@ function mapProperty(row: Record<string, unknown>): Property {
   };
 }
 
+function mapSolution(row: Record<string, unknown>): PropertySolution {
+  const cd = (row.cost_detail as Record<string, unknown>) ?? {};
+  const ac = (row.action_checklist as Record<string, unknown>) ?? {};
+  return {
+    id: row.id as string,
+    propertyId: row.property_id as string,
+    userId: row.user_id as string,
+    summary: (row.summary as string) ?? '',
+    costDetail: {
+      bidPriceEstimate: (cd.bid_price_estimate as number) ?? 0,
+      acquisitionTax: (cd.acquisition_tax as number) ?? 0,
+      registrationFee: (cd.registration_fee as number) ?? 0,
+      judicialScrivener: (cd.judicial_scrivener as number) ?? 0,
+      stampDuty: (cd.stamp_duty as number) ?? 0,
+      evictionCost: (cd.eviction_cost as number) ?? 0,
+      renovationEstimate: (cd.renovation_estimate as number) ?? 0,
+      loanSetupFee: (cd.loan_setup_fee as number) ?? 0,
+      other: (cd.other as number) ?? 0,
+      total: (cd.total as number) ?? 0,
+      notes: (cd.notes as string) ?? '',
+    },
+    rightsSolutions: ((row.rights_solutions as unknown[]) ?? []).map((r) => {
+      const rs = r as Record<string, unknown>;
+      return {
+        issue: (rs.issue as string) ?? '',
+        severity: (rs.severity as 'high' | 'medium' | 'low') ?? 'low',
+        description: (rs.description as string) ?? '',
+        solution: (rs.solution as string) ?? '',
+        myAction: (rs.my_action as string) ?? '',
+      };
+    }),
+    actionChecklist: {
+      beforeBid: (ac.before_bid as string[]) ?? [],
+      afterWinning: (ac.after_winning as string[]) ?? [],
+      beforeRegistration: (ac.before_registration as string[]) ?? [],
+      afterRegistration: (ac.after_registration as string[]) ?? [],
+    },
+    otherSolutions: (row.other_solutions as string) ?? '',
+    createdAt: row.created_at as string,
+  };
+}
+
 function mapLegalAnalysis(row: Record<string, unknown>): LegalAnalysis {
   return {
     id: row.id as string,
@@ -92,18 +135,28 @@ export default async function AuctionDetailPage({ params }: PageProps) {
   const legalAnalysis = legalRaw ? mapLegalAnalysis(legalRaw as Record<string, unknown>) : null;
 
   let isFavorite = false;
+  let initialSolution = null;
   if (user) {
-    const { data: fav } = await supabase
-      .from('favorites')
-      .select('user_id')
-      .eq('property_id', id)
-      .eq('user_id', user.id)
-      .single();
+    const [{ data: fav }, { data: solData }] = await Promise.all([
+      supabase
+        .from('favorites')
+        .select('user_id')
+        .eq('property_id', id)
+        .eq('user_id', user.id)
+        .single(),
+      supabase
+        .from('property_solutions')
+        .select('*')
+        .eq('property_id', id)
+        .eq('user_id', user.id)
+        .single(),
+    ]);
     isFavorite = !!fav;
+    if (solData) initialSolution = mapSolution(solData as Record<string, unknown>);
   }
 
   return (
-    <div className="container mx-auto max-w-2xl py-6 px-4">
+    <div className="container mx-auto max-w-2xl py-6 px-4 pb-28">
       {/* 뒤로가기 */}
       <div className="mb-4">
         <Link href="/auction" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
@@ -228,6 +281,9 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         <ExternalLink className="h-4 w-4 mr-2" />
         법원경매정보 원본 보기
       </a>
+
+      {/* 솔루션 버튼 (고정 하단) */}
+      {user && <SolutionButton propertyId={id} initialSolution={initialSolution} />}
     </div>
   );
 }
