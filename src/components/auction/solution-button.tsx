@@ -45,7 +45,7 @@ export function SolutionButton({ propertyId, initialSolution }: SolutionButtonPr
   return (
     <>
       {/* 고정 하단 버튼 */}
-      <div className="fixed bottom-16 left-0 right-0 md:bottom-0 px-4 py-3 bg-background/95 backdrop-blur border-t z-40">
+      <div className="fixed bottom-16 left-0 right-0 md:bottom-0 px-4 py-3 bg-background/95 backdrop-blur border-t z-[60]">
         <div className="container mx-auto max-w-2xl flex gap-2">
           {solution ? (
             <>
