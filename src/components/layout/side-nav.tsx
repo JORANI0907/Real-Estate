@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Gavel, Heart, Settings } from 'lucide-react';
+import { BookOpen, Gavel, Heart, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { href: '/', icon: Home, label: '홈' },
+  { href: '/guide', icon: BookOpen, label: '서비스 안내' },
   { href: '/auction', icon: Gavel, label: '경매 매물' },
   { href: '/favorites', icon: Heart, label: '즐겨찾기' },
   { href: '/settings', icon: Settings, label: '설정' },
@@ -25,7 +25,7 @@ export function SideNav({ className }: SideNavProps) {
         메뉴
       </p>
       {navItems.map(({ href, icon: Icon, label }) => {
-        const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+        const isActive = pathname.startsWith(href);
         return (
           <Link
             key={href}
