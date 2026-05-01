@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Save, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -15,28 +14,27 @@ import { cn } from '@/lib/utils';
 // ── 선택지 상수 ──────────────────────────────────────────────
 
 const COURTS = [
-  { value: '', label: '전체 (법원 무관)' },
-  { value: '서울중앙지방법원', label: '서울중앙지방법원' },
-  { value: '서울동부지방법원', label: '서울동부지방법원' },
-  { value: '서울서부지방법원', label: '서울서부지방법원' },
-  { value: '서울남부지방법원', label: '서울남부지방법원' },
-  { value: '서울북부지방법원', label: '서울북부지방법원' },
-  { value: '수원지방법원', label: '수원지방법원' },
-  { value: '수원지방법원 성남지원', label: '수원지방법원 성남지원' },
-  { value: '수원지방법원 안산지원', label: '수원지방법원 안산지원' },
-  { value: '수원지방법원 평택지원', label: '수원지방법원 평택지원' },
-  { value: '인천지방법원', label: '인천지방법원' },
-  { value: '의정부지방법원', label: '의정부지방법원' },
-  { value: '춘천지방법원', label: '춘천지방법원' },
-  { value: '청주지방법원', label: '청주지방법원' },
-  { value: '대전지방법원', label: '대전지방법원' },
-  { value: '전주지방법원', label: '전주지방법원' },
-  { value: '광주지방법원', label: '광주지방법원' },
-  { value: '대구지방법원', label: '대구지방법원' },
-  { value: '부산지방법원', label: '부산지방법원' },
-  { value: '울산지방법원', label: '울산지방법원' },
-  { value: '창원지방법원', label: '창원지방법원' },
-  { value: '제주지방법원', label: '제주지방법원' },
+  { value: '서울중앙지방법원', label: '서울중앙' },
+  { value: '서울동부지방법원', label: '서울동부' },
+  { value: '서울서부지방법원', label: '서울서부' },
+  { value: '서울남부지방법원', label: '서울남부' },
+  { value: '서울북부지방법원', label: '서울북부' },
+  { value: '수원지방법원', label: '수원' },
+  { value: '수원지방법원 성남지원', label: '성남' },
+  { value: '수원지방법원 안산지원', label: '안산' },
+  { value: '수원지방법원 평택지원', label: '평택' },
+  { value: '인천지방법원', label: '인천' },
+  { value: '의정부지방법원', label: '의정부' },
+  { value: '춘천지방법원', label: '춘천' },
+  { value: '청주지방법원', label: '청주' },
+  { value: '대전지방법원', label: '대전' },
+  { value: '전주지방법원', label: '전주' },
+  { value: '광주지방법원', label: '광주' },
+  { value: '대구지방법원', label: '대구' },
+  { value: '부산지방법원', label: '부산' },
+  { value: '울산지방법원', label: '울산' },
+  { value: '창원지방법원', label: '창원' },
+  { value: '제주지방법원', label: '제주' },
 ];
 
 const SIDOS = [
@@ -82,7 +80,6 @@ const MID_CATEGORIES: Record<string, { value: string; label: string }[]> = {
 
 const MINOR_CATEGORIES: Record<string, { value: string; label: string }[]> = {
   '주거용건물': [
-    { value: '', label: '전체' },
     { value: '아파트', label: '아파트' },
     { value: '연립주택', label: '연립주택' },
     { value: '다세대주택', label: '다세대주택' },
@@ -91,12 +88,10 @@ const MINOR_CATEGORIES: Record<string, { value: string; label: string }[]> = {
     { value: '오피스텔', label: '오피스텔' },
   ],
   '상업용건물': [
-    { value: '', label: '전체' },
     { value: '상가', label: '상가' },
     { value: '근린시설', label: '근린시설' },
     { value: '사무실', label: '사무실' },
   ],
-  '': [{ value: '', label: '전체' }],
 };
 
 const APPRAISAL_OPTIONS = [
@@ -124,12 +119,14 @@ const FAIL_COUNT_OPTIONS = [
 interface CrawlerConfig {
   search_by: string;
   court: string;
+  courts: string[];
   division: string;
   sido: string;
   sigungu: string;
   major_category: string;
   mid_category: string;
   minor_category: string;
+  minor_categories: string[];
   appraisal_min: string;
   appraisal_max: string;
   fail_count_min: string;
@@ -141,8 +138,9 @@ interface CrawlerConfig {
 }
 
 const DEFAULT: CrawlerConfig = {
-  search_by: 'court', court: '', division: '', sido: '', sigungu: '',
+  search_by: 'court', court: '', courts: [], division: '', sido: '', sigungu: '',
   major_category: '건물', mid_category: '주거용건물', minor_category: '아파트',
+  minor_categories: ['아파트'],
   appraisal_min: '1억원', appraisal_max: '10억원',
   fail_count_min: '1회', fail_count_max: '',
   max_pages: 1, notify_email: 'sunrise@bbkorea.co.kr', min_items_to_notify: 1,
@@ -173,10 +171,27 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
+function BadgeToggle({ label, active, onClick }: {
+  label: string; active: boolean; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'px-2.5 py-1 text-xs rounded-full border font-medium transition-colors',
+        active
+          ? 'bg-primary text-primary-foreground border-primary'
+          : 'bg-background text-muted-foreground border-input hover:bg-muted'
+      )}
+    >
+      {label}
+    </button>
+  );
+}
+
 // ── 메인 페이지 ───────────────────────────────────────────────
 
 export default function CrawlerConfigPage() {
-  const router = useRouter();
   const [config, setConfig] = useState<CrawlerConfig>(DEFAULT);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -184,12 +199,40 @@ export default function CrawlerConfigPage() {
   useEffect(() => {
     fetch('/api/crawler-config')
       .then(r => r.json())
-      .then(data => { if (!data.error) setConfig(data); })
+      .then(data => {
+        if (!data.error) {
+          setConfig({
+            ...data,
+            courts: data.courts ?? [],
+            minor_categories: data.minor_categories ?? [],
+          });
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
   function set<K extends keyof CrawlerConfig>(key: K, value: CrawlerConfig[K]) {
     setConfig(prev => ({ ...prev, [key]: value }));
+  }
+
+  function toggleCourt(val: string) {
+    setConfig(prev => {
+      const courts = prev.courts ?? [];
+      return {
+        ...prev,
+        courts: courts.includes(val) ? courts.filter(c => c !== val) : [...courts, val],
+      };
+    });
+  }
+
+  function toggleMinorCat(val: string) {
+    setConfig(prev => {
+      const cats = prev.minor_categories ?? [];
+      return {
+        ...prev,
+        minor_categories: cats.includes(val) ? cats.filter(c => c !== val) : [...cats, val],
+      };
+    });
   }
 
   async function handleSave() {
@@ -211,7 +254,7 @@ export default function CrawlerConfigPage() {
   }
 
   const midOptions = MID_CATEGORIES[config.major_category] ?? [{ value: '', label: '전체' }];
-  const minorOptions = MINOR_CATEGORIES[config.mid_category] ?? [{ value: '', label: '전체' }];
+  const minorOptions = MINOR_CATEGORIES[config.mid_category] ?? [];
 
   if (loading) {
     return (
@@ -272,16 +315,36 @@ export default function CrawlerConfigPage() {
           </Row>
 
           {config.search_by === 'court' ? (
-            <Row label="법원 선택">
-              <Select value={config.court || '__all'} onValueChange={(v: string | null) => set('court', (v ?? '') === '__all' ? '' : (v ?? ''))}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {COURTS.map(c => (
-                    <SelectItem key={c.value || '__all'} value={c.value || '__all'}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Row>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  법원 선택
+                  <span className="text-xs ml-1">
+                    {config.courts.length > 0
+                      ? `(${config.courts.length}개 선택됨)`
+                      : '(미선택 시 전체)'}
+                  </span>
+                </span>
+                {config.courts.length > 0 && (
+                  <button
+                    onClick={() => set('courts', [])}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    전체 해제
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {COURTS.map(c => (
+                  <BadgeToggle
+                    key={c.value}
+                    label={c.label}
+                    active={config.courts.includes(c.value)}
+                    onClick={() => toggleCourt(c.value)}
+                  />
+                ))}
+              </div>
+            </div>
           ) : (
             <Row label="시도 선택">
               <Select value={config.sido || '__all'} onValueChange={(v: string | null) => set('sido', (v ?? '') === '__all' ? '' : (v ?? ''))}>
@@ -304,6 +367,7 @@ export default function CrawlerConfigPage() {
               set('major_category', v);
               set('mid_category', '');
               set('minor_category', '');
+              set('minor_categories', []);
             }}>
               <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -319,6 +383,7 @@ export default function CrawlerConfigPage() {
               <Select value={config.mid_category || '__all'} onValueChange={(v: string | null) => {
                 set('mid_category', (v ?? '') === '__all' ? '' : (v ?? ''));
                 set('minor_category', '');
+                set('minor_categories', []);
               }}>
                 <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -330,17 +395,37 @@ export default function CrawlerConfigPage() {
             </Row>
           )}
 
-          {minorOptions.length > 1 && (
-            <Row label="소분류">
-              <Select value={config.minor_category || '__all'} onValueChange={(v: string | null) => set('minor_category', (v ?? '') === '__all' ? '' : (v ?? ''))}>
-                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {minorOptions.map(c => (
-                    <SelectItem key={c.value || '__all'} value={c.value || '__all'}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Row>
+          {minorOptions.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  소분류
+                  <span className="text-xs ml-1">
+                    {config.minor_categories.length > 0
+                      ? `(${config.minor_categories.length}개 선택됨)`
+                      : '(미선택 시 전체)'}
+                  </span>
+                </span>
+                {config.minor_categories.length > 0 && (
+                  <button
+                    onClick={() => set('minor_categories', [])}
+                    className="text-xs text-muted-foreground hover:text-foreground underline"
+                  >
+                    전체 해제
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {minorOptions.map(c => (
+                  <BadgeToggle
+                    key={c.value}
+                    label={c.label}
+                    active={config.minor_categories.includes(c.value)}
+                    onClick={() => toggleMinorCat(c.value)}
+                  />
+                ))}
+              </div>
+            </div>
           )}
         </Section>
 
