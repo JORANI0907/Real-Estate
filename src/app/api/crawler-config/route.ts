@@ -28,6 +28,7 @@ export async function PATCH(request: Request) {
     'appraisal_min', 'appraisal_max',
     'fail_count_min', 'fail_count_max',
     'max_pages', 'notify_email', 'min_items_to_notify',
+    'make_manual_webhook_url',
   ];
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   for (const key of allowed) {
