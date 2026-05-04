@@ -179,7 +179,9 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
           }}
         >
           <SelectTrigger className="h-8 text-sm">
-            <SelectValue />
+            <SelectValue>
+              {PROPERTY_TYPES.find(t => t.value === currentPropertyType)?.label ?? '전체'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {PROPERTY_TYPES.map(({ value, label }) => (
@@ -262,7 +264,9 @@ export function AuctionFilters({ className }: AuctionFiltersProps) {
           }}
         >
           <SelectTrigger className="h-8 text-sm">
-            <SelectValue />
+            <SelectValue>
+              {SORT_OPTIONS.find(o => o.value === currentSort)?.label ?? '매각기일 임박순'}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {SORT_OPTIONS.map(({ value, label }) => (
