@@ -50,6 +50,7 @@ export async function AuctionList({ searchParams }: AuctionListProps) {
   const bidDateTo = getParam(searchParams, 'bidDateTo');
   const bidDays = getParam(searchParams, 'bidDays');
   const searchKeyword = getParam(searchParams, 'searchKeyword');
+  const crawledDate = getParam(searchParams, 'crawledDate');
   const sortBy = getParam(searchParams, 'sortBy') || 'bid_date';
   const sortOrder = getParam(searchParams, 'sortOrder') === 'desc';
 
@@ -65,6 +66,12 @@ export async function AuctionList({ searchParams }: AuctionListProps) {
     query = query.lte('bid_date', bidDateTo);
   }
   if (searchKeyword) query = query.ilike('address', `%${searchKeyword}%`);
+  if (crawledDate) {
+    // KST 기준 해당 날짜의 시작~끝 범위 (UTC+9)
+    query = query
+      .gte('crawled_at', `${crawledDate}T00:00:00+09:00`)
+      .lte('crawled_at', `${crawledDate}T23:59:59+09:00`);
+  }
 
   const sortColumn =
     sortBy === 'minBidAmount' ? 'min_bid_amount' :
@@ -103,7 +110,7 @@ export async function AuctionList({ searchParams }: AuctionListProps) {
   const buildPageUrl = (p: number) => {
     const sp = new URLSearchParams();
     sp.set('page', String(p));
-    const keys = ['riskLevel', 'priceMin', 'priceMax', 'failCountMin', 'propertyType', 'bidDateFrom', 'bidDateTo', 'bidDays', 'searchKeyword', 'sortBy', 'sortOrder'];
+    const keys = ['riskLevel', 'priceMin', 'priceMax', 'failCountMin', 'propertyType', 'bidDateFrom', 'bidDateTo', 'bidDays', 'searchKeyword', 'sortBy', 'sortOrder', 'crawledDate'];
     keys.forEach((key) => {
       const v = getParam(searchParams, key);
       if (v) sp.set(key, v);
