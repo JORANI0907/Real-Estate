@@ -24,10 +24,10 @@ export function RiskBadge({ level, className, size = 'sm' }: RiskBadgeProps) {
   }
 
   const cfg = riskConfig[level];
-  const sizeClass = size === 'lg' ? 'px-4 py-1.5 text-base font-bold' : size === 'md' ? 'px-3 py-1 text-sm font-semibold' : 'px-2 py-0.5 text-xs font-medium';
+  const sizeClass = size === 'lg' ? 'px-3 py-1 text-sm font-bold' : size === 'md' ? 'px-2.5 py-0.5 text-xs font-semibold' : 'px-2 py-0.5 text-xs font-medium';
 
   return (
-    <span className={cn('inline-flex items-center rounded-full', sizeClass, cfg.bg, cfg.text, className)}>
+    <span className={cn('inline-flex items-center rounded-full whitespace-nowrap shrink-0', sizeClass, cfg.bg, cfg.text, className)}>
       {cfg.label}
     </span>
   );
