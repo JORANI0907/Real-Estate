@@ -23,16 +23,24 @@ async function main() {
   const dbConfig = await getCrawlerConfig();
   if (dbConfig) {
     Object.assign(config, dbConfig);
-    const courtLabel = config.courts?.length > 0 ? config.courts.join(', ') : (config.court || '전체');
     const catLabel = config.minorCategories?.length > 0 ? config.minorCategories.join(', ') : (config.minorCategory || '전체');
-    console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} [${catLabel}] | 법원: ${courtLabel}`);
+    if (config.searchBy === 'address') {
+      const regionLabel = [config.sido, config.sigungu].filter(Boolean).join(' ') || '전체';
+      console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} [${catLabel}] | 소재지: ${regionLabel}`);
+    } else {
+      const courtLabel = config.courts?.length > 0 ? config.courts.join(', ') : (config.court || '전체');
+      console.log(`⚙️ DB 크롤링 설정 적용: ${config.majorCategory} ${config.midCategory} [${catLabel}] | 법원: ${courtLabel}`);
+    }
   } else {
     console.log('⚙️ 기본 크롤링 설정 사용');
   }
 
   try {
-    // Phase 1: 크롤링 (법원 × 소분류 조합 순회, caseNumber 기준 중복 제거)
-    const targetCourts = config.courts?.length > 0 ? config.courts : [config.court || ''];
+    // Phase 1: 크롤링 (소분류 조합 순회, caseNumber 기준 중복 제거)
+    // 소재지 기준이면 법원 루프 없이 1회 실행
+    const targetCourts = config.searchBy === 'address'
+      ? ['']
+      : (config.courts?.length > 0 ? config.courts : [config.court || '']);
     const targetCategories = config.minorCategories?.length > 0 ? config.minorCategories : [config.minorCategory || ''];
     const seenCaseNumbers = new Set();
     const allCrawledItems = [];
