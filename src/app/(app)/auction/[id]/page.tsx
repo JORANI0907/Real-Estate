@@ -1,15 +1,15 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ExternalLink, ChevronDown } from 'lucide-react';
+import { ArrowLeft, ExternalLink, ChevronDown, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase/server';
 import { RiskBadge } from '@/components/auction/risk-badge';
 import { LegalAnalysisSection } from '@/components/auction/legal-analysis-section';
+import { AutoSolutionSection } from '@/components/auction/auto-solution-section';
 import { FavoriteButton } from '@/components/common/favorite-button';
-import { SolutionButton } from '@/components/auction/solution-button';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatPrice, formatBidDate, formatDate } from '@/lib/format';
-import type { Property, LegalAnalysis } from '@/types/domain';
+import type { Property, LegalAnalysis, AutoSolution } from '@/types/domain';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -53,6 +53,54 @@ function mapProperty(row: Record<string, unknown>): Property {
   };
 }
 
+function mapAutoSolution(raw: unknown): AutoSolution | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const la = (r.location_analysis as Record<string, unknown>) ?? {};
+  const pc = (r.property_characteristics as Record<string, unknown>) ?? {};
+  const cd = (r.cost_detail as Record<string, unknown>) ?? {};
+  const ac = (r.action_checklist as Record<string, unknown>) ?? {};
+  return {
+    locationAnalysis: {
+      summary: (la.summary as string) ?? '',
+      pros: (la.pros as string[]) ?? [],
+      cons: (la.cons as string[]) ?? [],
+    },
+    propertyCharacteristics: {
+      summary: (pc.summary as string) ?? '',
+      points: (pc.points as string[]) ?? [],
+    },
+    rightsSolutions: ((r.rights_solutions as unknown[]) ?? []).map((rs) => {
+      const s = rs as Record<string, unknown>;
+      return {
+        issue: (s.issue as string) ?? '',
+        severity: (s.severity as 'high' | 'medium' | 'low') ?? 'low',
+        description: (s.description as string) ?? '',
+        solution: (s.solution as string) ?? '',
+        myAction: (s.my_action as string) ?? '',
+      };
+    }),
+    costDetail: {
+      bidPriceEstimate: (cd.bid_price_estimate as number) ?? 0,
+      acquisitionTax: (cd.acquisition_tax as number) ?? 0,
+      registrationFee: (cd.registration_fee as number) ?? 0,
+      judicialScrivener: (cd.judicial_scrivener as number) ?? 0,
+      evictionCost: (cd.eviction_cost as number) ?? 0,
+      renovationEstimate: (cd.renovation_estimate as number) ?? 0,
+      other: (cd.other as number) ?? 0,
+      total: (cd.total as number) ?? 0,
+      notes: (cd.notes as string) ?? '',
+    },
+    actionChecklist: {
+      beforeBid: (ac.before_bid as string[]) ?? [],
+      afterWinning: (ac.after_winning as string[]) ?? [],
+      beforeRegistration: (ac.before_registration as string[]) ?? [],
+      afterRegistration: (ac.after_registration as string[]) ?? [],
+    },
+    investmentOpinion: (r.investment_opinion as string) ?? '',
+  };
+}
+
 function mapLegalAnalysis(row: Record<string, unknown>): LegalAnalysis {
   return {
     id: row.id as string,
@@ -69,6 +117,7 @@ function mapLegalAnalysis(row: Record<string, unknown>): LegalAnalysis {
     investmentMemo: (row.investment_memo as string) ?? '',
     rawAnalysis: (row.raw_analysis as string) ?? '',
     analyzedAt: row.analyzed_at as string,
+    autoSolution: mapAutoSolution(row.auto_solution),
   };
 }
 
@@ -117,7 +166,20 @@ export default async function AuctionDetailPage({ params }: PageProps) {
       <div className="flex items-start justify-between gap-3 mb-6">
         <div className="space-y-1">
           <p className="text-sm text-muted-foreground font-mono">{property.caseNumber}</p>
-          <h1 className="text-xl font-bold leading-snug">{property.address}</h1>
+          <div className="flex items-start gap-2">
+            <h1 className="text-xl font-bold leading-snug flex-1">{property.address}</h1>
+            {property.address && (
+              <a
+                href={`https://map.naver.com/v5/search/${encodeURIComponent(property.address)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 inline-flex items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium text-green-700 border-green-200 bg-green-50 hover:bg-green-100 dark:text-green-400 dark:border-green-800 dark:bg-green-950/30 transition-colors"
+              >
+                <MapPin className="h-3 w-3" />
+                지도
+              </a>
+            )}
+          </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>{property.court}</span>
             {property.division && <><span>·</span><span>{property.division}</span></>}
@@ -230,8 +292,18 @@ export default async function AuctionDetailPage({ params }: PageProps) {
         법원경매정보 원본 보기
       </a>
 
-      {/* 솔루션 버튼 (고정 하단 — 클라이언트에서 직접 솔루션 로드) */}
-      <SolutionButton propertyId={id} />
+      {/* 종합 솔루션 */}
+      {legalAnalysis?.autoSolution ? (
+        <section className="mb-6">
+          <h2 className="text-base font-bold mb-3">종합 솔루션</h2>
+          <AutoSolutionSection solution={legalAnalysis.autoSolution} />
+        </section>
+      ) : legalAnalysis && (
+        <div className="rounded-xl border border-dashed p-6 text-center text-muted-foreground mb-6">
+          <p className="text-sm">솔루션 데이터가 없습니다</p>
+          <p className="text-xs mt-1">최신 크롤링 물건부터 자동으로 생성됩니다</p>
+        </div>
+      )}
     </div>
   );
 }

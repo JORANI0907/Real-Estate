@@ -82,6 +82,7 @@ async function saveAnalysis(items) {
         cost_breakdown: item.analysis.cost_breakdown || {},
         investment_memo: item.analysis.investment_memo || '',
         raw_analysis: JSON.stringify(item.analysis),
+        auto_solution: item.solution || null,
       }, { onConflict: 'property_id' });
 
     if (error) console.warn(`⚠️ 분석 저장 실패 (${item.caseNumber}):`, error.message);

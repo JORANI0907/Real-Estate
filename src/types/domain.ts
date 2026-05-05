@@ -42,6 +42,43 @@ export interface Property {
   updatedAt: string;
 }
 
+export interface AutoSolution {
+  locationAnalysis: {
+    summary: string;
+    pros: string[];
+    cons: string[];
+  };
+  propertyCharacteristics: {
+    summary: string;
+    points: string[];
+  };
+  rightsSolutions: {
+    issue: string;
+    severity: 'high' | 'medium' | 'low';
+    description: string;
+    solution: string;
+    myAction: string;
+  }[];
+  costDetail: {
+    bidPriceEstimate: number;
+    acquisitionTax: number;
+    registrationFee: number;
+    judicialScrivener: number;
+    evictionCost: number;
+    renovationEstimate: number;
+    other: number;
+    total: number;
+    notes: string;
+  };
+  actionChecklist: {
+    beforeBid: string[];
+    afterWinning: string[];
+    beforeRegistration: string[];
+    afterRegistration: string[];
+  };
+  investmentOpinion: string;
+}
+
 export interface LegalAnalysis {
   id: string;
   propertyId: string;
@@ -72,6 +109,7 @@ export interface LegalAnalysis {
   investmentMemo: string;
   rawAnalysis: string;
   analyzedAt: string;
+  autoSolution: AutoSolution | null;
 }
 
 export interface AuctionListItem {
