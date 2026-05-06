@@ -162,6 +162,7 @@ interface CrawlerConfig {
   division: string;
   sido: string;
   sigungu: string;
+  sigungus: string[];
   major_category: string;
   mid_category: string;
   minor_category: string;
@@ -177,7 +178,7 @@ interface CrawlerConfig {
 }
 
 const DEFAULT: CrawlerConfig = {
-  search_by: 'court', court: '', courts: [], division: '', sido: '', sigungu: '',
+  search_by: 'court', court: '', courts: [], division: '', sido: '', sigungu: '', sigungus: [],
   major_category: '건물', mid_category: '주거용건물', minor_category: '아파트',
   minor_categories: ['아파트'],
   appraisal_min: '1억원', appraisal_max: '10억원',
@@ -246,6 +247,7 @@ export function CrawlerSettingsSheet() {
         ...data,
         courts: data.courts ?? [],
         minor_categories: data.minor_categories ?? [],
+        sigungus: data.sigungus ?? [],
       });
       setLoaded(true);
     }
@@ -276,6 +278,16 @@ export function CrawlerSettingsSheet() {
       return {
         ...prev,
         minor_categories: cats.includes(val) ? cats.filter(c => c !== val) : [...cats, val],
+      };
+    });
+  }
+
+  function toggleSigungu(val: string) {
+    setConfig(prev => {
+      const sggs = prev.sigungus ?? [];
+      return {
+        ...prev,
+        sigungus: sggs.includes(val) ? sggs.filter(s => s !== val) : [...sggs, val],
       };
     });
   }
@@ -382,7 +394,7 @@ export function CrawlerSettingsSheet() {
                     value={config.sido || '__all'}
                     onValueChange={(v: string | null) => {
                       const sido = (v ?? '') === '__all' ? '' : (v ?? '');
-                      setConfig(prev => ({ ...prev, sido, sigungu: '' }));
+                      setConfig(prev => ({ ...prev, sido, sigungu: '', sigungus: [] }));
                     }}
                   >
                     <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
@@ -395,20 +407,36 @@ export function CrawlerSettingsSheet() {
                 </Row>
 
                 {config.sido && SIGUNGU[config.sido] && (
-                  <Row label="시군구 선택">
-                    <Select
-                      value={config.sigungu || '__all'}
-                      onValueChange={(v: string | null) => set('sigungu', (v ?? '') === '__all' ? '' : (v ?? ''))}
-                    >
-                      <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__all">전체 ({config.sido})</SelectItem>
-                        {SIGUNGU[config.sido].map(sg => (
-                          <SelectItem key={sg} value={sg}>{sg}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </Row>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        시군구 선택
+                        <span className="text-xs ml-1">
+                          {config.sigungus.length > 0
+                            ? `(${config.sigungus.length}개 선택됨)`
+                            : '(미선택 시 전체)'}
+                        </span>
+                      </span>
+                      {config.sigungus.length > 0 && (
+                        <button
+                          onClick={() => set('sigungus', [])}
+                          className="text-xs text-muted-foreground hover:text-foreground underline"
+                        >
+                          전체 해제
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SIGUNGU[config.sido].map(sg => (
+                        <BadgeToggle
+                          key={sg}
+                          label={sg}
+                          active={config.sigungus.includes(sg)}
+                          onClick={() => toggleSigungu(sg)}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
             )}

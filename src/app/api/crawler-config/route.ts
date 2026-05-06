@@ -23,7 +23,7 @@ export async function PATCH(request: Request) {
 
   const body = await request.json();
   const allowed = [
-    'search_by', 'court', 'courts', 'division', 'sido', 'sigungu',
+    'search_by', 'court', 'courts', 'division', 'sido', 'sigungu', 'sigungus',
     'major_category', 'mid_category', 'minor_category', 'minor_categories',
     'appraisal_min', 'appraisal_max',
     'fail_count_min', 'fail_count_max',
