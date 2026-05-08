@@ -142,6 +142,8 @@ const APPRAISAL_OPTIONS = [
   { value: '3억원', label: '3억원' },
   { value: '5억원', label: '5억원' },
   { value: '10억원', label: '10억원' },
+  { value: '20억원', label: '20억원' },
+  { value: '30억원', label: '30억원' },
 ];
 
 const FAIL_COUNT_OPTIONS = [
